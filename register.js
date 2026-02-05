@@ -125,6 +125,7 @@ async function connectGithub() {
   githubStatus.textContent = "Opening GitHub OAuth...";
   const oauthUrl = `${apiBase}/api/auth/github/oauth?state=${encodeURIComponent(tempToken)}`;
   openOAuth(oauthUrl, githubStatus, registerOauthRow, registerOauthLink);
+  startExchangePolling(tempToken, githubStatus);
 }
 
 async function logout() {
@@ -172,6 +173,7 @@ async function loginUser() {
   loginStatus.textContent = "Opening GitHub OAuth...";
   const oauthUrl = `${apiBase}/api/auth/github/oauth?state=${encodeURIComponent(tempToken)}`;
   openOAuth(oauthUrl, loginStatus, loginOauthRow, loginOauthLink);
+  startExchangePolling(tempToken, loginStatus);
 }
 
 function openOAuth(oauthUrl, statusEl, rowEl, linkEl) {
@@ -183,6 +185,59 @@ function openOAuth(oauthUrl, statusEl, rowEl, linkEl) {
       rowEl.classList.remove("hidden");
     }
   });
+}
+
+async function startExchangePolling(tempToken, statusEl) {
+  const apiBase = await ensureApiBase();
+  let extensionKey = "";
+  try {
+    extensionKey = await ensureExtensionKey(apiBase);
+  } catch (error) {
+    statusEl.textContent = error?.message || "Extension registration failed";
+    return;
+  }
+
+  const startedAt = Date.now();
+  const timeoutMs = 2 * 60 * 1000;
+
+  const poll = async () => {
+    if (Date.now() - startedAt > timeoutMs) {
+      clearInterval(intervalId);
+      statusEl.textContent = "Timed out waiting for GitHub OAuth.";
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/auth/exchange`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-extension-key": extensionKey },
+        body: JSON.stringify({ temp_token: tempToken })
+      });
+
+      if (response.status === 202) {
+        statusEl.textContent = "Waiting for GitHub approval...";
+        return;
+      }
+
+      const data = await response.json();
+      if (!response.ok) {
+        statusEl.textContent = data?.message || "OAuth failed";
+        clearInterval(intervalId);
+        return;
+      }
+
+      await chrome.storage.local.set({ token: data.token, refreshToken: data.refresh_token });
+      tokenStatus.textContent = "Authenticated";
+      statusEl.textContent = "Authentication completed.";
+      clearInterval(intervalId);
+    } catch (error) {
+      statusEl.textContent = error?.message || "OAuth failed";
+      clearInterval(intervalId);
+    }
+  };
+
+  const intervalId = setInterval(poll, 2000);
+  poll();
 }
 
 async function copyOauthUrl(linkEl) {
