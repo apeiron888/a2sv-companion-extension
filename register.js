@@ -120,8 +120,8 @@ async function loginUser() {
     return;
   }
 
-  loginStatus.textContent = "Logging in...";
-  const response = await fetch(`${apiBase}/api/auth/login`, {
+  loginStatus.textContent = "Starting login...";
+  const response = await fetch(`${apiBase}/api/auth/login/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
@@ -133,9 +133,15 @@ async function loginUser() {
     return;
   }
 
-  await chrome.storage.local.set({ token: data.token, refreshToken: data.refresh_token });
-  loginStatus.textContent = "Logged in";
-  await loadSession();
+  const tempToken = data.temp_token;
+  if (!tempToken) {
+    loginStatus.textContent = "Login failed";
+    return;
+  }
+
+  loginStatus.textContent = "Opening GitHub OAuth...";
+  const oauthUrl = `${apiBase}/api/auth/github/oauth?state=${encodeURIComponent(tempToken)}`;
+  chrome.tabs.create({ url: oauthUrl });
 }
 
 registerBtn.addEventListener("click", registerUser);
