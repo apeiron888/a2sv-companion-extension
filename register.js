@@ -13,9 +13,6 @@ const logoutBtn = document.getElementById("logoutBtn");
 const loginEmailInput = document.getElementById("loginEmail");
 const loginBtn = document.getElementById("loginBtn");
 const loginStatus = document.getElementById("loginStatus");
-const apiBaseInput = document.getElementById("apiBase");
-const saveApiBaseBtn = document.getElementById("saveApiBase");
-const apiBaseStatus = document.getElementById("apiBaseStatus");
 const registerOauthRow = document.getElementById("registerOauthRow");
 const registerOauthLink = document.getElementById("registerOauthLink");
 const copyRegisterOauth = document.getElementById("copyRegisterOauth");
@@ -31,21 +28,6 @@ async function ensureApiBase() {
   return apiBase || DEFAULT_API_BASE;
 }
 
-async function loadApiBase() {
-  const current = await ensureApiBase();
-  apiBaseInput.value = current;
-}
-
-async function saveApiBase() {
-  apiBaseStatus.textContent = "";
-  const value = apiBaseInput.value.trim();
-  if (!value) {
-    apiBaseStatus.textContent = "API base is required";
-    return;
-  }
-  await chrome.storage.local.set({ apiBase: value });
-  apiBaseStatus.textContent = "API base saved";
-}
 
 async function loadSession() {
   const { token, refreshToken } = await chrome.storage.local.get(["token", "refreshToken"]);
@@ -177,12 +159,10 @@ registerBtn.addEventListener("click", registerUser);
 connectGithubBtn.addEventListener("click", connectGithub);
 logoutBtn.addEventListener("click", logout);
 loginBtn.addEventListener("click", loginUser);
-saveApiBaseBtn.addEventListener("click", saveApiBase);
 copyRegisterOauth.addEventListener("click", () => copyOauthUrl(registerOauthLink));
 copyLoginOauth.addEventListener("click", () => copyOauthUrl(loginOauthLink));
 
 ensureApiBase().then(async () => {
   await loadSession();
   await loadTempToken();
-  await loadApiBase();
 });
