@@ -16,6 +16,12 @@ const loginStatus = document.getElementById("loginStatus");
 const apiBaseInput = document.getElementById("apiBase");
 const saveApiBaseBtn = document.getElementById("saveApiBase");
 const apiBaseStatus = document.getElementById("apiBaseStatus");
+const registerOauthRow = document.getElementById("registerOauthRow");
+const registerOauthLink = document.getElementById("registerOauthLink");
+const copyRegisterOauth = document.getElementById("copyRegisterOauth");
+const loginOauthRow = document.getElementById("loginOauthRow");
+const loginOauthLink = document.getElementById("loginOauthLink");
+const copyLoginOauth = document.getElementById("copyLoginOauth");
 
 async function ensureApiBase() {
   const { apiBase } = await chrome.storage.local.get(["apiBase"]);
@@ -94,6 +100,7 @@ async function registerUser() {
 
 async function connectGithub() {
   githubStatus.textContent = "";
+  registerOauthRow.classList.add("hidden");
   const apiBase = await ensureApiBase();
   const { tempToken } = await chrome.storage.local.get(["tempToken"]);
   if (!tempToken) {
@@ -102,7 +109,7 @@ async function connectGithub() {
   }
   githubStatus.textContent = "Opening GitHub OAuth...";
   const oauthUrl = `${apiBase}/api/auth/github/oauth?state=${encodeURIComponent(tempToken)}`;
-  chrome.tabs.create({ url: oauthUrl });
+  openOAuth(oauthUrl, githubStatus, registerOauthRow, registerOauthLink);
 }
 
 async function logout() {
@@ -113,6 +120,7 @@ async function logout() {
 
 async function loginUser() {
   loginStatus.textContent = "";
+  loginOauthRow.classList.add("hidden");
   const apiBase = await ensureApiBase();
   const email = loginEmailInput.value.trim();
   if (!email) {
@@ -141,7 +149,28 @@ async function loginUser() {
 
   loginStatus.textContent = "Opening GitHub OAuth...";
   const oauthUrl = `${apiBase}/api/auth/github/oauth?state=${encodeURIComponent(tempToken)}`;
-  chrome.tabs.create({ url: oauthUrl });
+  openOAuth(oauthUrl, loginStatus, loginOauthRow, loginOauthLink);
+}
+
+function openOAuth(oauthUrl, statusEl, rowEl, linkEl) {
+  chrome.tabs.create({ url: oauthUrl }, () => {
+    if (chrome.runtime.lastError) {
+      statusEl.textContent = "OAuth tab blocked. Open the URL manually:";
+      linkEl.href = oauthUrl;
+      linkEl.textContent = oauthUrl;
+      rowEl.classList.remove("hidden");
+    }
+  });
+}
+
+async function copyOauthUrl(linkEl) {
+  const url = linkEl?.href;
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    window.prompt("Copy OAuth URL:", url);
+  }
 }
 
 registerBtn.addEventListener("click", registerUser);
@@ -149,6 +178,8 @@ connectGithubBtn.addEventListener("click", connectGithub);
 logoutBtn.addEventListener("click", logout);
 loginBtn.addEventListener("click", loginUser);
 saveApiBaseBtn.addEventListener("click", saveApiBase);
+copyRegisterOauth.addEventListener("click", () => copyOauthUrl(registerOauthLink));
+copyLoginOauth.addEventListener("click", () => copyOauthUrl(loginOauthLink));
 
 ensureApiBase().then(async () => {
   await loadSession();
