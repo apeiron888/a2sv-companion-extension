@@ -3,13 +3,16 @@
   "name": "A2SV Companion",
   "version": "0.1.0",
   "description": "Track A2SV progress and submit solutions to GitHub + Google Sheets.",
+  "icons": {
+    "16": "./static/icons/icon16.png",
+    "48": "./static/icons/icon48.png",
+    "128": "./static/icons/icon128.png"
+  },
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "https://leetcode.com/*",
     "https://codeforces.com/*",
-    "https://api.yourdomain.com/*",
-    "https://a2sv-companion-backend.onrender.com/*",
-    "http://localhost:4000/*"
+    "https://a2sv-companion-backend.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -17,9 +20,9 @@
   "action": {
     "default_title": "A2SV Companion",
     "default_icon": {
-      "16": "./icons/icon16.png",
-      "48": "./icons/icon48.png",
-      "128": "./icons/icon128.png"
+      "16": "./static/icons/icon16.png",
+      "48": "./static/icons/icon48.png",
+      "128": "./static/icons/icon128.png"
     }
   },
   "content_scripts": [
