@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "A2SV Companion",
+  "version": "0.1.0",
+  "description": "Track A2SV progress and submit solutions to GitHub + Google Sheets.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://leetcode.com/*",
+    "https://codeforces.com/*",
+    "https://api.yourdomain.com/*",
+    "https://a2sv-companion-backend.onrender.com/*",
+    "http://localhost:4000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "A2SV Companion"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": ["content/leetcode.js"],
+      "css": ["content/styles.css"]
+    },
+    {
+      "matches": ["https://codeforces.com/*/submission/*"],
+      "js": ["content/codeforces.js"],
+      "css": ["content/styles.css"]
+    },
+    {
+      "matches": [
+        "https://codeforces.com/problemset/problem/*/*",
+        "https://codeforces.com/contest/*/problem/*",
+        "https://codeforces.com/gym/*/problem/*"
+      ],
+      "js": ["content/codeforces-problem.js"],
+      "css": ["content/styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["success.html", "error.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
+  }
+}

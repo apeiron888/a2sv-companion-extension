@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A2SV Companion Registration</title>
+    <link rel="stylesheet" href="register.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>A2SV Companion</h1>
+        <p class="subtitle">Register and connect your GitHub account</p>
+      </header>
+
+      <section class="card">
+        <h2>Register</h2>
+        <label>
+          Full name
+          <input id="fullName" type="text" placeholder="Full name" />
+        </label>
+        <label>
+          Email
+          <input id="email" type="email" placeholder="Email" />
+        </label>
+        <label>
+          Group
+          <input id="group" type="text" placeholder="G7A" />
+        </label>
+        <label>
+          GitHub repo (owner/repo)
+          <input id="repo" type="text" placeholder="username/repo" />
+        </label>
+        <button id="registerBtn">Register</button>
+        <p id="registerStatus" class="status"></p>
+        <button id="connectGithubBtn" class="secondary" disabled>Connect GitHub</button>
+        <p id="githubStatus" class="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Login</h2>
+        <label>
+          Email
+          <input id="loginEmail" type="email" placeholder="Email" />
+        </label>
+        <button id="loginBtn" class="secondary">Login</button>
+        <p id="loginStatus" class="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Session</h2>
+        <p id="tokenStatus" class="status">Checking authentication…</p>
+        <button id="logoutBtn" class="secondary">Logout</button>
+      </section>
+
+      <section class="card">
+        <h2>API Base</h2>
+        <label>
+          Backend URL
+          <input id="apiBase" type="text" placeholder="https://a2sv-companion-backend.onrender.com" />
+        </label>
+        <button id="saveApiBase" class="secondary">Save API Base</button>
+        <p id="apiBaseStatus" class="status"></p>
+      </section>
+    </div>
+
+    <script src="register.js"></script>
+  </body>
+</html>
