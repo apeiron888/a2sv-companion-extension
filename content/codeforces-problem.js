@@ -5,13 +5,41 @@
   window.__A2SV_COMPANION_CF_PROBLEM__ = true;
 
   const DEFAULT_API_BASE = "https://a2sv-companion-backend.onrender.com";
-  const storage = await chrome.storage.local.get(["apiBase", "token", "refreshToken"]);
+  const storage = await chrome.storage.local.get([
+    "apiBase",
+    "token",
+    "refreshToken",
+    "extensionKey",
+    "installId"
+  ]);
   const apiBase = storage.apiBase || DEFAULT_API_BASE;
   if (!storage.apiBase) {
     chrome.storage.local.set({ apiBase });
   }
   let token = storage.token;
   let refreshToken = storage.refreshToken;
+  let extensionKey = storage.extensionKey;
+  async function ensureExtensionKey() {
+    if (extensionKey) return extensionKey;
+    const version = chrome.runtime?.getManifest?.().version;
+    const response = await fetch(`${apiBase}/api/extension/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extension_version: version })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.message || "Extension registration failed");
+    }
+
+    extensionKey = data.extension_key;
+    await chrome.storage.local.set({
+      extensionKey: data.extension_key,
+      installId: data.install_id
+    });
+    return extensionKey;
+  }
 
   const widget = document.createElement("div");
   widget.className = "a2sv-widget";
@@ -93,9 +121,10 @@
 
   async function tryRefreshToken() {
     if (!refreshToken) return null;
+    const key = await ensureExtensionKey();
     const response = await fetch(`${apiBase}/api/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-extension-key": key },
       body: JSON.stringify({ refresh_token: refreshToken })
     });
     const data = await response.json();
@@ -156,11 +185,13 @@
     statusEl.textContent = "Submitting...";
 
     try {
+      const key = await ensureExtensionKey();
       let response = await fetch(`${apiBase}/api/submissions/codeforces`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "x-extension-key": key
         },
         body: JSON.stringify(payload)
       });
@@ -172,7 +203,8 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${newToken}`
+              Authorization: `Bearer ${newToken}`,
+              "x-extension-key": key
             },
             body: JSON.stringify(payload)
           });

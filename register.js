@@ -28,6 +28,32 @@ async function ensureApiBase() {
   return apiBase || DEFAULT_API_BASE;
 }
 
+async function ensureExtensionKey(apiBase) {
+  const stored = await chrome.storage.local.get(["extensionKey", "installId"]);
+  if (stored.extensionKey) {
+    return stored.extensionKey;
+  }
+
+  const version = chrome.runtime?.getManifest?.().version;
+  const response = await fetch(`${apiBase}/api/extension/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ extension_version: version })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "Extension registration failed");
+  }
+
+  await chrome.storage.local.set({
+    extensionKey: data.extension_key,
+    installId: data.install_id
+  });
+
+  return data.extension_key;
+}
+
 
 async function loadSession() {
   const { token, refreshToken } = await chrome.storage.local.get(["token", "refreshToken"]);
@@ -48,6 +74,13 @@ async function loadTempToken() {
 async function registerUser() {
   registerStatus.textContent = "";
   const apiBase = await ensureApiBase();
+  let extensionKey = "";
+  try {
+    extensionKey = await ensureExtensionKey(apiBase);
+  } catch (error) {
+    registerStatus.textContent = error?.message || "Extension registration failed";
+    return;
+  }
 
   const payload = {
     full_name: fullNameInput.value.trim(),
@@ -65,7 +98,7 @@ async function registerUser() {
 
   const response = await fetch(`${apiBase}/api/auth/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-extension-key": extensionKey },
     body: JSON.stringify(payload)
   });
 
@@ -104,6 +137,13 @@ async function loginUser() {
   loginStatus.textContent = "";
   loginOauthRow.classList.add("hidden");
   const apiBase = await ensureApiBase();
+  let extensionKey = "";
+  try {
+    extensionKey = await ensureExtensionKey(apiBase);
+  } catch (error) {
+    loginStatus.textContent = error?.message || "Extension registration failed";
+    return;
+  }
   const email = loginEmailInput.value.trim();
   if (!email) {
     loginStatus.textContent = "Email is required";
@@ -113,7 +153,7 @@ async function loginUser() {
   loginStatus.textContent = "Starting login...";
   const response = await fetch(`${apiBase}/api/auth/login/start`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-extension-key": extensionKey },
     body: JSON.stringify({ email })
   });
 
