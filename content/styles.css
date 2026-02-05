@@ -1,0 +1,53 @@
+.a2sv-widget {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 280px;
+  padding: 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  z-index: 999999;
+  font-family: Arial, sans-serif;
+}
+
+.a2sv-widget h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.a2sv-widget label {
+  display: block;
+  font-size: 12px;
+  margin: 6px 0;
+}
+
+.a2sv-widget input,
+.a2sv-widget textarea,
+.a2sv-widget select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.a2sv-widget button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #22c55e;
+  color: #0f172a;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.a2sv-status {
+  font-size: 12px;
+  margin-top: 6px;
+  color: #94a3b8;
+}
