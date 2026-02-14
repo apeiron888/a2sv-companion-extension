@@ -1,53 +1,261 @@
+/* ═══════════════════════════════════════════════════════════════════
+   A2SV Companion Extension — Widget Styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Toggle Button ─── */
 .a2sv-widget {
+  --a2sv-bg: #1a1a2e;
+  --a2sv-bg2: #16213e;
+  --a2sv-border: #2a2a4a;
+  --a2sv-text: #e2e8f0;
+  --a2sv-text2: #94a3b8;
+  --a2sv-accent: #22c55e;
+  --a2sv-blue: #3b82f6;
+  --a2sv-red: #ef4444;
+  --a2sv-radius: 10px;
+  --a2sv-font: 'Segoe UI', -apple-system, sans-serif;
+  font-family: var(--a2sv-font) !important;
   position: fixed;
-  right: 16px;
-  bottom: 16px;
-  width: 280px;
-  padding: 12px;
-  background: #0f172a;
-  color: #f8fafc;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  z-index: 999999;
-  font-family: Arial, sans-serif;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99999;
 }
 
-.a2sv-widget h3 {
-  margin: 0 0 8px;
-  font-size: 14px;
+.a2sv-widget.a2sv-light {
+  --a2sv-bg: #ffffff;
+  --a2sv-bg2: #f8fafc;
+  --a2sv-border: #e2e8f0;
+  --a2sv-text: #1e293b;
+  --a2sv-text2: #64748b;
 }
 
-.a2sv-widget label {
-  display: block;
-  font-size: 12px;
-  margin: 6px 0;
-}
-
-.a2sv-widget input,
-.a2sv-widget textarea,
-.a2sv-widget select {
-  width: 100%;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f8fafc;
-}
-
-.a2sv-widget button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
-  border: none;
-  border-radius: 6px;
-  background: #22c55e;
-  color: #0f172a;
-  font-weight: bold;
+.a2sv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--a2sv-bg);
+  border: 1px solid var(--a2sv-border);
+  border-radius: 24px;
   cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
 }
 
-.a2sv-status {
+.a2sv-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.a2sv-toggle-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.a2sv-toggle-text {
   font-size: 12px;
-  margin-top: 6px;
-  color: #94a3b8;
+  font-weight: 700;
+  color: var(--a2sv-text);
+  letter-spacing: 0.05em;
+}
+
+/* ─── Panel ─── */
+.a2sv-panel {
+  position: absolute;
+  bottom: 50px;
+  right: 0;
+  width: 280px;
+  background: var(--a2sv-bg);
+  border: 1px solid var(--a2sv-border);
+  border-radius: var(--a2sv-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform-origin: bottom right;
+}
+
+.a2sv-panel.a2sv-collapsed {
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  pointer-events: none;
+}
+
+.a2sv-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--a2sv-bg2);
+  border-bottom: 1px solid var(--a2sv-border);
+}
+
+.a2sv-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--a2sv-text);
+  letter-spacing: -0.01em;
+}
+
+.a2sv-close {
+  cursor: pointer;
+  color: var(--a2sv-text2);
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.a2sv-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--a2sv-text);
+}
+
+.a2sv-panel-body {
+  padding: 14px;
+}
+
+/* ─── Auth Info ─── */
+.a2sv-auth-info {
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+.a2sv-auth-connected {
+  color: var(--a2sv-accent);
+  font-weight: 600;
+}
+
+.a2sv-auth-disconnected {
+  color: var(--a2sv-text2);
+}
+
+.a2sv-auth-disconnected a {
+  color: var(--a2sv-blue);
+  text-decoration: none;
+}
+
+.a2sv-auth-disconnected a:hover {
+  text-decoration: underline;
+}
+
+/* ─── Fields ─── */
+.a2sv-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.a2sv-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--a2sv-text2);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.a2sv-field input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--a2sv-border);
+  border-radius: 6px;
+  background: var(--a2sv-bg2);
+  color: var(--a2sv-text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--a2sv-font);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.a2sv-field input:focus {
+  border-color: var(--a2sv-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* ─── Submit Button ─── */
+.a2sv-submit-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: var(--a2sv-accent);
+  color: #0f172a;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--a2sv-font);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-bottom: 8px;
+}
+
+.a2sv-submit-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.a2sv-submit-btn:active {
+  transform: translateY(0);
+}
+
+.a2sv-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Progress Steps ─── */
+.a2sv-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.a2sv-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--a2sv-text2);
+  padding: 3px 0;
+}
+
+.a2sv-step span {
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+}
+
+.a2sv-step-done {
+  color: var(--a2sv-accent);
+}
+
+.a2sv-step-loading {
+  color: var(--a2sv-blue);
+}
+
+.a2sv-step-loading span {
+  animation: a2sv-spin 1s linear infinite;
+}
+
+.a2sv-step-error {
+  color: var(--a2sv-red);
+}
+
+.a2sv-step-pending {
+  color: var(--a2sv-text2);
+  opacity: 0.5;
+}
+
+@keyframes a2sv-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

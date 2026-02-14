@@ -1,58 +1,60 @@
 {
   "manifest_version": 3,
   "name": "A2SV Companion",
-  "version": "0.1.0",
-  "description": "Track A2SV progress and submit solutions to GitHub + Google Sheets.",
+  "version": "2.0.0",
+  "description": "Automatically push code to GitHub and update progress sheets from LeetCode, Codeforces, and HackerRank.",
   "icons": {
-    "16": "./static/icons/icon16.png",
-    "48": "./static/icons/icon48.png",
-    "128": "./static/icons/icon128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "identity"],
   "host_permissions": [
     "https://leetcode.com/*",
     "https://codeforces.com/*",
+    "https://www.hackerrank.com/*",
     "https://a2sv-companion-backend.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "A2SV Companion",
+    "default_popup": "popup.html",
     "default_icon": {
-      "16": "./static/icons/icon16.png",
-      "48": "./static/icons/icon48.png",
-      "128": "./static/icons/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
     }
   },
   "content_scripts": [
     {
       "matches": ["https://leetcode.com/problems/*"],
-      "js": ["content/leetcode.js"],
-      "css": ["content/styles.css"]
+      "js": ["content/shared.js", "content/leetcode.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
     },
     {
-      "matches": ["https://codeforces.com/*/submission/*"],
-      "js": ["content/codeforces.js"],
-      "css": ["content/styles.css"]
+      "matches": ["https://codeforces.com/contest/*/submission/*", "https://codeforces.com/problemset/submission/*"],
+      "js": ["content/shared.js", "content/codeforces.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
     },
     {
-      "matches": [
-        "https://codeforces.com/problemset/problem/*/*",
-        "https://codeforces.com/contest/*/problem/*",
-        "https://codeforces.com/gym/*/problem/*"
-      ],
-      "js": ["content/codeforces-problem.js"],
-      "css": ["content/styles.css"]
+      "matches": ["https://codeforces.com/contest/*/problem/*", "https://codeforces.com/problemset/problem/*"],
+      "js": ["content/shared.js", "content/codeforces-problem.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.hackerrank.com/challenges/*/problem*"],
+      "js": ["content/shared.js", "content/hackerrank.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["success.html", "error.html"],
+      "resources": ["register.html", "success.html", "error.html", "icons/*"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
-  }
+  ]
 }
