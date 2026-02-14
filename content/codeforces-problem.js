@@ -1,3 +1,174 @@
+/* New embedded widget flow; legacy widget is bypassed below. */
+(async function () {
+  if (window.__A2SV_COMPANION_CF_PROBLEM_WIDGET__) {
+    return;
+  }
+  window.__A2SV_COMPANION_CF_PROBLEM_WIDGET__ = true;
+
+  const widget = createA2SVWidget({ platformName: "Codeforces", collapsed: true, inline: true });
+  const mount = await waitForMount();
+  (mount || document.body).appendChild(widget);
+  await updateAuthInfo();
+
+  const submitBtn = widget.querySelector("#a2sv-submit");
+  submitBtn.addEventListener("click", handleSubmit);
+
+  function normalizeLanguage(label) {
+    const value = (label || "").toLowerCase();
+    if (value.includes("c++") || value.includes("gnu c++")) return "cpp";
+    if (value.includes("python")) return "python";
+    if (value.includes("javascript")) return "javascript";
+    if (value.includes("java")) return "java";
+    return "cpp";
+  }
+
+  function parseCodeforcesKeyFromUrl(rawUrl) {
+    if (!rawUrl) return "";
+    const url = rawUrl.replace("https://codeforces.com", "");
+    const patterns = [
+      /\/problemset\/problem\/(\d+)\/([^/]+)/,
+      /\/contest\/(\d+)\/problem\/([^/]+)/,
+      /\/gym\/(\d+)\/problem\/([^/]+)/,
+      /\/problem\/(\d+)\/([^/]+)/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return `${match[1]}${match[2]}`;
+      }
+    }
+    return "";
+  }
+
+  function extractQuestionKey() {
+    return parseCodeforcesKeyFromUrl(window.location.pathname);
+  }
+
+  function extractTitle() {
+    const title = document.querySelector(".problem-statement .title");
+    return title?.textContent?.trim() || document.title;
+  }
+
+  function extractLanguage() {
+    const select = document.querySelector("select[name='programTypeId']");
+    const selected = select?.querySelector("option:checked");
+    return normalizeLanguage(selected?.textContent || "");
+  }
+
+  function extractCode() {
+    const textarea = document.querySelector("textarea[name='source']");
+    return textarea?.value?.trim() || "";
+  }
+
+  function hasAcceptedOnPage() {
+    const verdict = document.querySelector(".verdict-accepted");
+    if (verdict) return true;
+    const text = document.body.innerText || "";
+    return text.includes("Accepted") || text.includes("OK");
+  }
+
+  async function handleSubmit() {
+    submitBtn.disabled = true;
+    const steps = [
+      { label: "Submitting", status: "loading" },
+      { label: "Pushing to GitHub", status: "pending" },
+      { label: "Updating sheet", status: "pending" }
+    ];
+    updateWidgetProgress(steps);
+
+    try {
+      const auth = await getStoredAuth();
+      if (!auth.token) {
+        updateWidgetProgress([{ label: "Not logged in", status: "error" }]);
+        return;
+      }
+
+      if (!hasAcceptedOnPage()) {
+        updateWidgetProgress([
+          { label: "Accepted submission not detected", status: "error" }
+        ]);
+        return;
+      }
+
+      const trials = Number(widget.querySelector("#a2sv-trials").value || 1);
+      const time = Number(widget.querySelector("#a2sv-time").value || 0);
+      const language = extractLanguage();
+      const code = extractCode();
+
+      if (!code) {
+        updateWidgetProgress([{ label: "No code detected", status: "error" }]);
+        return;
+      }
+
+      const payload = {
+        question_url: window.location.href,
+        question_key: extractQuestionKey(),
+        title: extractTitle(),
+        code,
+        language,
+        trial_count: trials,
+        time_minutes: time
+      };
+
+      const result = await submitSolution("codeforces", payload);
+      steps[0] = { label: "Submitted", status: "done" };
+      steps[1] = { label: "Pushing to GitHub", status: "loading" };
+      updateWidgetProgress(steps);
+
+      const submissionId = getSubmissionId(result);
+      if (!submissionId) {
+        updateWidgetProgress([{ label: "Submission queued", status: "done" }]);
+        return;
+      }
+
+      const finalStatus = await pollSubmissionStatus(submissionId, (data) => {
+        if (data.githubCommitUrl) {
+          steps[1] = { label: "Pushed to GitHub ✓", status: "done" };
+        }
+        if (data.sheetUpdated) {
+          steps[2] = { label: "Sheet updated ✓", status: "done" };
+        }
+        updateWidgetProgress(steps);
+      });
+
+      if (finalStatus.status === "completed") {
+        steps[2] = { label: "Sheet updated ✓", status: "done" };
+      } else if (finalStatus.status === "failed") {
+        steps[2] = { label: "Update failed", status: "error" };
+      } else {
+        steps[2] = { label: "Timed out", status: "error" };
+      }
+      updateWidgetProgress(steps);
+    } catch (error) {
+      updateWidgetProgress([{ label: error?.message || "Submission failed", status: "error" }]);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+
+  function getSubmissionId(result) {
+    return result?.submissionId || result?.submission_id || result?.id || "";
+  }
+
+  function findProblemMount() {
+    const form = document.querySelector("form#problem-submit");
+    if (form?.parentElement) return form.parentElement;
+    const statement = document.querySelector(".problem-statement");
+    return statement?.parentElement || document.querySelector("#pageContent") || null;
+  }
+
+  async function waitForMount(attempts = 12) {
+    for (let i = 0; i < attempts; i += 1) {
+      const mount = findProblemMount();
+      if (mount) return mount;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    return null;
+  }
+})();
+
+window.__A2SV_COMPANION_CF_PROBLEM__ = true;
+
 (async function () {
   if (window.__A2SV_COMPANION_CF_PROBLEM__) {
     return;

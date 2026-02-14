@@ -2,7 +2,15 @@
    A2SV Companion Extension — Shared Utilities
    ═══════════════════════════════════════════════════════════════════ */
 
-const A2SV_API_BASE = "https://a2sv-companion-backend.onrender.com";
+const DEFAULT_API_BASE = "https://a2sv-companion-backend.onrender.com";
+
+async function getApiBase() {
+  const stored = await chrome.storage.local.get(["apiBase"]);
+  if (!stored.apiBase) {
+    await chrome.storage.local.set({ apiBase: DEFAULT_API_BASE });
+  }
+  return stored.apiBase || DEFAULT_API_BASE;
+}
 
 /**
  * Get stored authentication data from chrome.storage.local.
@@ -10,10 +18,50 @@ const A2SV_API_BASE = "https://a2sv-companion-backend.onrender.com";
 function getStoredAuth() {
   return new Promise((resolve) => {
     chrome.storage.local.get(
-      ["a2svToken", "a2svRefreshToken", "a2svExtensionKey", "a2svUserId"],
-      (result) => resolve(result)
+      [
+        "token",
+        "refreshToken",
+        "extensionKey",
+        "installId",
+        "a2svToken",
+        "a2svRefreshToken",
+        "a2svExtensionKey"
+      ],
+      (result) => {
+        resolve({
+          token: result.token || result.a2svToken || "",
+          refreshToken: result.refreshToken || result.a2svRefreshToken || "",
+          extensionKey: result.extensionKey || result.a2svExtensionKey || "",
+          installId: result.installId || ""
+        });
+      }
     );
   });
+}
+
+async function ensureExtensionKey() {
+  const auth = await getStoredAuth();
+  if (auth.extensionKey) return auth.extensionKey;
+
+  const apiBase = await getApiBase();
+  const version = chrome.runtime?.getManifest?.().version;
+  const response = await fetch(`${apiBase}/api/extension/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ extension_version: version })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "Extension registration failed");
+  }
+
+  await chrome.storage.local.set({
+    extensionKey: data.extension_key,
+    installId: data.install_id
+  });
+
+  return data.extension_key;
 }
 
 /**
@@ -21,18 +69,20 @@ function getStoredAuth() {
  */
 async function a2svApiCall(path, options = {}, retried = false) {
   const auth = await getStoredAuth();
-  if (!auth.a2svToken) {
+  if (!auth.token) {
     throw new Error("NOT_AUTHENTICATED");
   }
 
+  const apiBase = await getApiBase();
+  const extensionKey = auth.extensionKey || (await ensureExtensionKey());
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${auth.a2svToken}`,
-    ...(auth.a2svExtensionKey ? { "x-extension-key": auth.a2svExtensionKey } : {}),
+    Authorization: `Bearer ${auth.token}`,
+    ...(extensionKey ? { "x-extension-key": extensionKey } : {}),
     ...(options.headers || {})
   };
 
-  const response = await fetch(`${A2SV_API_BASE}${path}`, {
+  const response = await fetch(`${apiBase}${path}`, {
     ...options,
     headers
   });
@@ -57,13 +107,18 @@ async function a2svApiCall(path, options = {}, retried = false) {
  */
 async function refreshToken() {
   const auth = await getStoredAuth();
-  if (!auth.a2svRefreshToken) return false;
+  if (!auth.refreshToken) return false;
 
   try {
-    const response = await fetch(`${A2SV_API_BASE}/api/auth/refresh`, {
+    const apiBase = await getApiBase();
+    const extensionKey = auth.extensionKey || (await ensureExtensionKey());
+    const response = await fetch(`${apiBase}/api/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: auth.a2svRefreshToken })
+      headers: {
+        "Content-Type": "application/json",
+        ...(extensionKey ? { "x-extension-key": extensionKey } : {})
+      },
+      body: JSON.stringify({ refresh_token: auth.refreshToken })
     });
 
     if (!response.ok) return false;
@@ -72,8 +127,8 @@ async function refreshToken() {
     await new Promise((resolve) => {
       chrome.storage.local.set(
         {
-          a2svToken: data.token,
-          ...(data.refreshToken ? { a2svRefreshToken: data.refreshToken } : {})
+          token: data.token,
+          ...(data.refresh_token ? { refreshToken: data.refresh_token } : {})
         },
         resolve
       );
@@ -133,12 +188,12 @@ function detectDarkMode() {
  * Create the A2SV widget panel element.
  */
 function createA2SVWidget(options = {}) {
-  const { platformName = "Platform", collapsed = true } = options;
+  const { platformName = "Platform", collapsed = true, inline = false } = options;
   const isDark = detectDarkMode();
 
   const widget = document.createElement("div");
   widget.id = "a2sv-widget";
-  widget.className = `a2sv-widget ${isDark ? "a2sv-dark" : "a2sv-light"}`;
+  widget.className = `a2sv-widget ${isDark ? "a2sv-dark" : "a2sv-light"} ${inline ? "a2sv-inline" : ""}`;
 
   widget.innerHTML = `
     <div class="a2sv-toggle" id="a2sv-toggle" title="A2SV Tracker">
@@ -147,7 +202,7 @@ function createA2SVWidget(options = {}) {
     </div>
     <div class="a2sv-panel ${collapsed ? "a2sv-collapsed" : ""}" id="a2sv-panel">
       <div class="a2sv-panel-header">
-        <span class="a2sv-panel-title">A2SV Tracker</span>
+        <span class="a2sv-panel-title">A2SV Tracker • ${platformName}</span>
         <span class="a2sv-close" id="a2sv-close">✕</span>
       </div>
       <div class="a2sv-panel-body">
@@ -214,7 +269,7 @@ async function updateAuthInfo() {
   if (!authInfo) return;
 
   const auth = await getStoredAuth();
-  if (auth.a2svToken) {
+  if (auth.token) {
     authInfo.innerHTML = '<span class="a2sv-auth-connected">● Connected</span>';
   } else {
     authInfo.innerHTML = '<span class="a2sv-auth-disconnected">○ Not logged in — <a href="#" id="a2sv-login-link">Login</a></span>';
@@ -222,7 +277,8 @@ async function updateAuthInfo() {
     if (loginLink) {
       loginLink.addEventListener("click", (e) => {
         e.preventDefault();
-        chrome.runtime.sendMessage({ action: "openPopup" });
+        const url = chrome.runtime.getURL("register.html");
+        window.open(url, "_blank", "noopener,noreferrer");
       });
     }
   }

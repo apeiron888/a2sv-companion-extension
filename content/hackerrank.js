@@ -16,8 +16,9 @@
   const questionKey = problemMatch[1];
 
   // Inject widget
-  const widget = createA2SVWidget({ platformName: "HackerRank", collapsed: true });
-  document.body.appendChild(widget);
+  const widget = createA2SVWidget({ platformName: "HackerRank", collapsed: true, inline: true });
+  const mount = await waitForMount();
+  (mount || document.body).appendChild(widget);
   await updateAuthInfo();
 
   // Submit handler
@@ -35,6 +36,19 @@
     updateWidgetProgress(steps);
 
     try {
+      const auth = await getStoredAuth();
+      if (!auth.token) {
+        updateWidgetProgress([{ label: "Not logged in", status: "error" }]);
+        submitBtn.disabled = false;
+        return;
+      }
+
+      if (!isAccepted()) {
+        updateWidgetProgress([{ label: "Submission not accepted yet", status: "error" }]);
+        submitBtn.disabled = false;
+        return;
+      }
+
       // Extract code from the editor
       const code = extractCode();
       if (!code) {
@@ -132,6 +146,32 @@
       return textarea.value;
     }
 
+    return null;
+  }
+
+  function isAccepted() {
+    const text = document.body.innerText || "";
+    if (text.includes("Congratulations")) return true;
+    if (text.includes("All test cases passed")) return true;
+    const successBanner = document.querySelector(".congrats-wrapper, .challenge-success");
+    return Boolean(successBanner);
+  }
+
+  function findHackerRankMount() {
+    const sidebar = document.querySelector(".challenge-view .challenge-sidebar");
+    if (sidebar) return sidebar;
+    const editor = document.querySelector(".monaco-editor, .CodeMirror, .ace_editor");
+    if (editor?.parentElement) return editor.parentElement;
+    const content = document.querySelector(".challenge-body-html, .problem-statement");
+    return content?.parentElement || null;
+  }
+
+  async function waitForMount(attempts = 12) {
+    for (let i = 0; i < attempts; i += 1) {
+      const mount = findHackerRankMount();
+      if (mount) return mount;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
     return null;
   }
 

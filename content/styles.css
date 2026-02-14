@@ -21,6 +21,16 @@
   z-index: 99999;
 }
 
+.a2sv-widget.a2sv-inline {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  z-index: auto;
+  margin: 12px 0;
+  width: 100%;
+  max-width: 360px;
+}
+
 .a2sv-widget.a2sv-light {
   --a2sv-bg: #ffffff;
   --a2sv-bg2: #f8fafc;
@@ -41,6 +51,10 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
+}
+
+.a2sv-widget.a2sv-inline .a2sv-toggle {
+  width: fit-content;
 }
 
 .a2sv-toggle:hover {
@@ -73,6 +87,18 @@
   overflow: hidden;
   transition: opacity 0.2s ease, transform 0.2s ease;
   transform-origin: bottom right;
+}
+
+.a2sv-widget.a2sv-inline .a2sv-panel {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.a2sv-widget.a2sv-inline .a2sv-panel.a2sv-collapsed {
+  display: none;
 }
 
 .a2sv-panel.a2sv-collapsed {
